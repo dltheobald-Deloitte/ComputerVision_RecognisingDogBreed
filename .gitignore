@@ -1,0 +1,3 @@
+bottleneck_features/DogVGG19Data.npz
+bottleneck_features/DogVGG16Data.npz
+model/notebook/weights.best.from_scratch.hdf5

@@ -1,32 +1,27 @@
 import sys
-import pickle
 import numpy as np
 
 from glob import glob
 from os.path import isfile
 
 from keras.utils import np_utils
-from keras.layers import Activation, GlobalAveragePooling2D, Flatten, Activation, Dense, MaxPooling2D
+from keras.layers import Activation, GlobalAveragePooling2D, Activation, Dense
 from keras.models import Sequential
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing import image
-from keras.applications.vgg19 import VGG19, preprocess_input
-from keras.wrappers.scikit_learn import KerasClassifier
 
-from sklearn.pipeline import Pipeline
 from sklearn.datasets import load_files
-from sklearn.preprocessing import FunctionTransformer
 
 
 # load list of dog names
-dog_names = [item[20:-1] for item in sorted(glob("../dogImages/train/*/"))]
+dog_names = [item[20:-1] for item in sorted(glob("../../dogImages/train/*/"))]
 
 
 def load_dataset(path_dict):
-    preprocessed_features = r'bottleneck_features/DogVGG19Data.npz'
+    preprocessed_features = r'../bottleneck_features/DogVGG19Data.npz'
 
     if isfile(preprocessed_features):
-        bottleneck_features = np.load('bottleneck_features/DogVGG19Data.npz')
+        bottleneck_features = np.load(preprocessed_features)
     else:
         print(r'Need to download bottleneck features at: https://s3-us-west-1.amazonaws.com/udacity-aind/dog-project/DogVGG19Data.npz')
 
@@ -39,8 +34,8 @@ def load_dataset(path_dict):
         dog_VGG19_features = bottleneck_features[key]
         dog_targets = np_utils.to_categorical(np.array(data['target']), 133)
 
-        feature_sets[key] = dog_target
-        target_sets[key] = dog_target
+        feature_sets[key] = dog_VGG19_features
+        target_sets[key] = dog_targets
 
     return feature_sets, target_sets
 
@@ -70,10 +65,7 @@ def define_model(train_data):
 def create_model_weights(output_path, X_train, y_train, X_validation, y_validation):
     model = define_model(X_train)
 
-    #if is_trained:
-    #    model.load_weights(output_path)
-    #else:
-    checkpointer = ModelCheckpoint(filepath=output_path, #'saved_models/weights.best.VGG19.hdf5', 
+    checkpointer = ModelCheckpoint(filepath=output_path,
                                 verbose=1, save_best_only=True)
 
     model.fit(X_train, y_train, 
@@ -81,46 +73,6 @@ def create_model_weights(output_path, X_train, y_train, X_validation, y_validati
                 epochs=20, batch_size=20, callbacks=[checkpointer], verbose=1)
 
     return model
-
-
-def path_to_tensor(img_path):
-    # loads RGB image as PIL.Image.Image type
-    img = image.load_img(img_path, target_size=(224, 224))
-    # convert PIL.Image.Image type to 3D tensor with shape (224, 224, 3)
-    x = image.img_to_array(img)
-    # convert 3D tensor to 4D tensor with shape (1, 224, 224, 3) and return 4D tensor
-    return np.expand_dims(x, axis=0)
-
-
-def paths_to_tensor(img_paths):
-    list_of_tensors = [path_to_tensor(img_path) for img_path in tqdm(img_paths)]
-    return np.vstack(list_of_tensors)
-
-
-def extract_VGG19(tensor):
-	return VGG19(weights='imagenet', include_top=False).predict(preprocess_input(tensor))
-
-
-def build_pipeline(model):
-    """ Creates an instance of model along with a machine learning pipeline which, when fit,
-    will process the features data and select the best parameters from those given to improve the model outputs.
-
-    Returns:
-    cv (GridSearchCV object): A machine learning pipeline and parameters to configure a model and process
-                              its features 
-    """
-    #Defines pipeline to calculate the tfidf of each message and pass through the categories features.
-    #This pipeline will also trains the classifier
-
-    ##bottleneck_features = np.load('bottleneck_features/DogVGG16Data.npz')
-    ###NEED TO ADD PREREQUISITES TO THIS, I.E. THE ABOVE AND THE DOG TRAIN/HUMAN TRAIN FILES.
-    pipeline = Pipeline([ 
-        ('img_array', FunctionTransformer(path_to_tensor, validate=False)]),
-        ('preprocess', FunctionTransformer(extract_VGG19, validate=False)),
-        ('clf', KerasClassifier(model))
-        ])
-
-    return pipeline
 
 
 def convert_to_label(predicted_vector, dog_names = dog_names):
@@ -138,8 +90,8 @@ def evaluate_model(model, X_test, Y_test):
     """
     #Prediction outputs from fitted model
     Y_pred = model.predict(X_test)
-
-    pairings = [1 for result in zip (Y_pred,Y_test) if convert_to_label(result[0]) = result[1].split('.')[-1] else 0]
+    
+    pairings = [1 if convert_to_label(result[0]) == convert_to_label(result[1]) else 0 for result in zip(Y_pred,Y_test)]
     accuracy = float(sum(pairings))/len(pairings)
     
     #Comparing predictions to actuals and printing metrics
@@ -154,38 +106,36 @@ def save_model(model, model_filepath):
     model_filepath (String): The location of where the model shoule be saved
     """
     #Saving a copy of the fitted model
-    pickle.dump(model, open(model_filepath, 'wb+'))
+    model.save(model_filepath)
 
 
 def main():
-    """ When this script is run as main, this creates a fitted model which can be used for precictions.
+    """ When this script is run as main, this creates a fitted model which can be used for predictions.
     It takes in specified system variables are used to exectue the machine learning pipeline:
         - loading in data
         - Builing the model
         - Evaluating the model
         - Saving the model
     """
-    if len(sys.argv) == 3:
-        database_filepath, model_filepath = sys.argv[1:]
-        print('Loading data...\n    DATABASE: {}'.format(database_filepath))
+    if len(sys.argv) == 2:
+        model_filepath = sys.argv[1:][0]
+        print('Loading data...')
 
-        files = {'train' : '../dog_images/train',
-                'test' : '../dog_images/valid',
-                'valid' : '../dog_images/test'}
+        files = {'train' : '../../dogImages/train',
+                'test' : '../../dogImages/test',
+                'valid' : '../../dogImages/valid'}
 
         features, targets = load_dataset(files)
         
         print('Training model...')
-        model_keras = create_model_weights('saved_models/best_weight.hd5f',features['train'], targets['train'],
+        model = create_model_weights('best_weights_VGG19.hd5f', features['train'], targets['train'],
                                     features['valid'], targets['valid'])
-                                    
-        model_sklearn = build_pipeline(model_keras)
 
         print('Evaluating model...')
-        evaluate_model(model_keras, features['test'], targets['test'])
+        evaluate_model(model, features['test'], targets['test'])
 
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
-        save_model(model_sklearn, model_filepath)
+        save_model(model, model_filepath)
 
         print('Trained model saved!')
 
