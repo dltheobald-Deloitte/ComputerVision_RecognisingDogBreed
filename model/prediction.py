@@ -72,14 +72,16 @@ def predict_breed(img_path):
     is_human = face_detector(img_path)
     is_dog = dog_detector(img_path)
 
+    line_1 = "We think this image is of "
+    line_2 = "We think this image mostly resembles a "
     if is_human & is_dog:
-        title = "We're not sure if this a dog or a human!\nHowever, this image mostly resembles a "
+        title = line_1 + "either a dog or a human, we're not sure!\n" + "However... " + line_2
     elif is_human:
-        title = "We think this image human!\nHowever, this image mostly resemble a "
+        title = line_1 + "a human!\n" + "However... " + line_2
     elif is_dog:
-        title = "We think this is a dog!\nThis image mostly resembles a "
+        title = line_1 + "a dog!\n" + line_2
     else:
-        title = "We couldn't detect dog or human faces... however, we think this may be a "
+        title = line_1 + "something other than a dog or a human!\n" + "However... " + line_2
 
     breed = ' '.join([word.capitalize() for word in model_predict(img_path).split('_')])
 

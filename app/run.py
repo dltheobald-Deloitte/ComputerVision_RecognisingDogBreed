@@ -8,15 +8,18 @@ from plotly.graph_objs import Bar
 from flask import Flask
 from flask import render_template, request, redirect, url_for
 from flask_uploads import UploadSet, configure_uploads, IMAGES
-
+print(sys.path)
 sys.path.append('..')
 from model.prediction import predict_breed
-
+print(sys.path)
 app = Flask(__name__)
 
 photos = UploadSet('photos', IMAGES)
 
-upload_folder = '../samples/'
+upload_folder = 'static'
+#os.path.join(os.getcwd(), '..', 'samples')
+# #os.path.join('..','samples')
+
 app.config['UPLOADED_PHOTOS_DEST'] = upload_folder
 
 configure_uploads(app,photos)
@@ -52,8 +55,13 @@ def index():
 def upload_image():
     if request.method == 'POST' and 'photo' in request.files:
         filename = photos.save(request.files['photo'])
-        breed = predict_breed(os.path.join(upload_folder,filename))
-        return breed
+        saved_img_path = os.path.join(sys.path[0], upload_folder, filename)
+        prediction = predict_breed(saved_img_path)
+        return render_template(
+                'upload_image.html',
+                img_name=filename,
+                prediction=prediction
+                )
 
     return redirect(url_for('index'))#'upload_image.html')
 
