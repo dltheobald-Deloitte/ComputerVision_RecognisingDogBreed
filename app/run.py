@@ -1,9 +1,10 @@
 import os
 import sys
 import json
+import pickle
 
 import plotly
-from plotly.graph_objs import Bar
+from plotly import graph_objs as go
 
 from flask import Flask
 from flask import render_template, request, redirect, url_for
@@ -12,6 +13,7 @@ print(sys.path)
 sys.path.append('..')
 from model.prediction import predict_breed
 print(sys.path)
+
 app = Flask(__name__)
 
 photos = UploadSet('photos', IMAGES)
@@ -24,25 +26,40 @@ app.config['UPLOADED_PHOTOS_DEST'] = upload_folder
 
 configure_uploads(app,photos)
 
+df = pickle.load(open('../model/Breed_Counts.pkl','rb'))
+human_vals, dog_vals = pickle.load(open('../model/BarChart_1.pkl','rb'))
 
 @app.route('/')
 @app.route('/index')
 def index():
     graphs = []
 
-    data = Bar(x = ['Alsatian', 'Poodle', 'Husky'], y=[3, 4, 5])
-    title = 'Test'
+    data = go.Bar(x = list(df.Breed), y=list(df.train_count))
+    title = 'Margins for count of Training Images'
     x_label = 'Dog Breed'
     y_label = 'Count'
 
-    graph = {'data': [data],
+    graph_1 = {'data': [data],
             'layout': {
                 'title': title,
                 'yaxis': {'title': x_label},
                 'xaxis': {'title': y_label}
             }}
 
-    graphs.append(graph)
+    graphs.append(graph_1)
+
+    detected = ['Humans', 'Dog']
+
+    graph_2 = go.Figure(data=[
+    go.Bar(name='Human_face_detector', x=detected, y=human_vals),
+    go.Bar(name='Dog_face_detector', x=detected, y=dog_vals)
+    ])
+    # Change the bar mode
+    graph_2.update_layout(barmode='group', showlegend = True, 
+                        title="Accuracy for a sample\nby Group and Detector type",
+                        yaxis_title=r"% of samples")
+
+    graphs.append(graph_2)
 
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
 

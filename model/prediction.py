@@ -10,7 +10,7 @@ from keras.applications.vgg19 import VGG19, preprocess_input
 
 from model.define_model import dog_names, convert_to_label
 
-breed_predictor = load_model('../model/Breed_Predictor.hd5f')
+breed_predictor = load_model('../model/Breed_Predictor.hdf5')
 
 model_VGG19_features = VGG19(weights='imagenet', include_top=False)
 ResNet50_model = ResNet50(weights='imagenet')
@@ -29,7 +29,7 @@ def path_to_tensor(img_path):
     return np.expand_dims(x, axis=0)
 
 
-def model_predict(img_path):
+def model_predict(img_path, breeds = dog_names):
     global graph
     with graph.as_default():
 
@@ -39,7 +39,7 @@ def model_predict(img_path):
 
         prediction = breed_predictor.predict(VGG19_features)
 
-        breed = convert_to_label(prediction)
+        breed = convert_to_label(prediction, breeds)
 
         return breed
 

@@ -75,8 +75,8 @@ def create_model_weights(output_path, X_train, y_train, X_validation, y_validati
     return model
 
 
-def convert_to_label(predicted_vector, dog_names = dog_names):
-    return dog_names[np.argmax(predicted_vector)].split('.')[-1]
+def convert_to_label(predicted_vector, breeds = dog_names):
+    return breeds[np.argmax(predicted_vector)].split('.')[-1]
 
 
 def evaluate_model(model, X_test, Y_test):
@@ -128,7 +128,7 @@ def main():
         features, targets = load_dataset(files)
         
         print('Training model...')
-        model = create_model_weights('best_weights_VGG19.hd5f', features['train'], targets['train'],
+        model = create_model_weights('best_weights_VGG19.hdf5', features['train'], targets['train'],
                                     features['valid'], targets['valid'])
 
         print('Evaluating model...')
