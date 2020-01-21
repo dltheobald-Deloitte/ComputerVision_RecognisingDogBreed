@@ -140,7 +140,7 @@ def predict_breed(img_path):
     img_path (String): Path to a file containing the image.
 
     Returns:
-    (Boolean): Presence of a dog
+    (Boolean): The breed which the image submitted most resembles
     """
     #Detects if an image contains a dog or a human
     is_human = face_detector(img_path)

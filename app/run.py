@@ -24,7 +24,8 @@ app.config['UPLOADED_PHOTOS_DEST'] = upload_folder
 configure_uploads(app,photos)
 
 #Loading pre-saved data for graphs
-df = pickle.load(open('../model/Breed_Counts.pkl','rb'))
+df_valid = pickle.load(open('../model/Breed_Counts_valid.pkl','rb'))
+df_train = pickle.load(open('../model/Breed_Counts_trin.pkl','rb'))
 human_vals, dog_vals = pickle.load(open('../model/BarChart_1.pkl','rb'))
 
 #Defining the homepage of the app being run.
@@ -38,12 +39,12 @@ def index():
     graphs = []
 
     #Defines the first Bar graph and its layout for the homepage
-    data = go.Bar(x = list(df.Breed), y=list(df.train_count))
-    title = 'Margins for count of Training Images'
+    data_valid = go.Bar(x = list(df_valid.Breed), y=list(df_valid.train_count))
+    title = 'Bias/Counts of Validation Images'
     x_label = 'Dog Breed'
     y_label = 'Count'
 
-    graph_1 = {'data': [data],
+    graph_1 = {'data': [data_valid],
             'layout': {
                 'title': title,
                 'yaxis': {'title': x_label},
@@ -52,10 +53,25 @@ def index():
 
     graphs.append(graph_1)
 
+    #Defines the first Bar graph and its layout for the homepage
+    data_train = go.Bar(x = list(df_train.Breed), y=list(df_train.train_count))
+    title = 'Bias/Counts of Training Images'
+    x_label = 'Dog Breed'
+    y_label = 'Count'
+
+    graph_2 = {'data': [data_train],
+            'layout': {
+                'title': title,
+                'yaxis': {'title': x_label},
+                'xaxis': {'title': y_label}
+            }}
+
+    graphs.append(graph_2)
+
     #Add a second graph (grouped bar chart) and updates its layout
     detected = ['Humans', 'Dog']
 
-    graph_2 = go.Figure(data=[
+    graph_3 = go.Figure(data=[
     go.Bar(name='Human_face_detector', x=detected, y=human_vals),
     go.Bar(name='Dog_face_detector', x=detected, y=dog_vals)
     ])
@@ -64,7 +80,7 @@ def index():
                         title="Accuracy for a sample\nby Group and Detector type",
                         yaxis_title=r"% of samples")
 
-    graphs.append(graph_2)
+    graphs.append(graph_3)
 
     #Adds id tags to the graphs for reference in html 
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
