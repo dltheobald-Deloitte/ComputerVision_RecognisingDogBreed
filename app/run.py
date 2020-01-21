@@ -25,7 +25,7 @@ configure_uploads(app,photos)
 
 #Loading pre-saved data for graphs
 df_valid = pickle.load(open('../model/Breed_Counts_valid.pkl','rb'))
-df_train = pickle.load(open('../model/Breed_Counts_trin.pkl','rb'))
+df_train = pickle.load(open('../model/Breed_Counts_train.pkl','rb'))
 human_vals, dog_vals = pickle.load(open('../model/BarChart_1.pkl','rb'))
 
 #Defining the homepage of the app being run.
@@ -76,7 +76,7 @@ def index():
     go.Bar(name='Dog_face_detector', x=detected, y=dog_vals)
     ])
     
-    graph_2.update_layout(barmode='group', showlegend = True, 
+    graph_3.update_layout(barmode='group', showlegend = True, 
                         title="Accuracy for a sample\nby Group and Detector type",
                         yaxis_title=r"% of samples")
 
